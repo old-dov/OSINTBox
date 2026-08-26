@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.venv_check/
+venv/
+.pytest_cache/
+
+# Resultats de scans generes localement (donnees de recon, pas du code)
+results/
+.osintbox_runs/
+
+# Cles API locales -- ne jamais commiter (voir osintbox.local.yaml.example)
+osintbox.local.yaml
+
+# Artefacts de build PyInstaller/Inno Setup
+build/
+dist/
+installer_output/
+*.spec

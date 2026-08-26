@@ -1,0 +1,14 @@
+# Copiez ce fichier vers osintbox.local.yaml (gitignore) et renseignez vos propres cles.
+# osintbox.local.yaml n'est jamais commite -- voir .gitignore.
+#
+# ATTENTION (2026-08-25) : Google a retire "Rechercher sur l'ensemble du Web" pour tout
+# NOUVEAU moteur Custom Search depuis le 2026-01-20 -- un moteur cree maintenant est restreint
+# aux sites explicitement listes (50 max), inutilisable pour du dorking generique. Voir la
+# section "Configuration (dorking)" du README pour le detail et les alternatives envisagees.
+#
+# Google Custom Search JSON API (requis pour --dork) :
+#   - api_key : console Google Cloud > APIs & Services > Credentials
+#   - cx      : identifiant de moteur de recherche programmable (programmablesearchengine.google.com)
+google_cse:
+  api_key: "VOTRE_CLE_API_ICI"
+  cx: "VOTRE_CX_ICI"

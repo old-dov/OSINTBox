@@ -1,0 +1,11 @@
+pyyaml>=6.0
+requests>=2.31.0
+sherlock-project>=0.16.0
+maigret>=0.6.5
+holehe>=1.61
+PySide6>=6.11.0
+# theHarvester : pas publiable proprement sur PyPI (le nom "theharvester" y est un package
+# squatte, v0.0.1, sans code reel -- verifie en l'installant : aucun module/CLI). Source reelle
+# = GitHub. Le tag principal (HEAD, 5.0.0) exige Python >= 3.14 -- epingle au dernier tag
+# compatible Python 3.12 (4.11.1), confirme en testant reellement l'installation.
+theharvester @ git+https://github.com/laramies/theHarvester.git@4.11.1

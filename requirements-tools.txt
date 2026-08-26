@@ -1,0 +1,10 @@
+# Dependances des 4 outils externes orchestres par OSINTBox.exe -- PAS PySide6 (deja
+# embarque dans l'exe fige, inutile ici et non disponible sur un Python 32 bits). A utiliser
+# pour un venv "outils" separe des sources, cote a cote d'une installation exe (voir README.md,
+# section "Build (exe + installeur)").
+pyyaml>=6.0
+requests>=2.31.0
+sherlock-project>=0.16.0
+maigret>=0.6.5
+holehe>=1.61
+theharvester @ git+https://github.com/laramies/theHarvester.git@4.11.1

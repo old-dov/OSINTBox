@@ -1,0 +1,63 @@
+# Registre des outils OSINT wrappes. Un outil = une entree ; voir osintbox/catalog.py pour le
+# schema (ToolSpec) et la validation. {target} est substitue par la valeur validee au lancement.
+
+- id: sherlock
+  category: username
+  desc: "Recherche un pseudo sur des centaines de reseaux sociaux/sites"
+  # --no-txt : evite l'ecriture d'un fichier .txt en sortie, on parse le stdout directement
+  # (voir normalizers.py -- pas de sortie JSON structuree native chez Sherlock).
+  command: ["sherlock", "--print-found", "--no-color", "--no-txt", "{target}"]
+  target_type: username
+  output_mode: stdout
+  default_timeout_s: 180
+  # Bruteforce sur des centaines de sites tiers (risque #1 du plan : rate-limit/ban IP) --
+  # espace les runs consecutifs de sherlock, peu importe la cible.
+  min_delay_s: 10
+  example: "torvalds"
+
+- id: maigret
+  category: username
+  desc: "Recherche un pseudo sur des centaines de sites, avec extraction de metadonnees"
+  # -J simple : vrai rapport JSON (contrairement a Sherlock), ecrit dans reports/ relatif au
+  # cwd du process -- voir runner.py (output_mode=json_file, cwd dedie par run).
+  command: ["maigret", "{target}", "-J", "simple", "--no-progressbar", "--no-color"]
+  target_type: username
+  output_mode: json_file
+  output_path_template: "reports/report_{target}_simple.json"
+  default_timeout_s: 300
+  min_delay_s: 10
+  # Maigret associe des tags pays (fr, us, de, ru...) aux sites de sa base -- --tags <code>
+  # restreint la recherche aux sites de ce territoire. Voir validators.TERRITORY_TAGS pour
+  # les codes valides. Sherlock n'a pas d'equivalent (pas de territory_flag pour lui).
+  territory_flag: "--tags"
+  example: "torvalds"
+
+- id: holehe
+  category: email
+  desc: "Verifie si une adresse email est utilisee pour creer un compte sur ~120 sites (via recuperation de mot de passe)"
+  # --only-used : ne garde que les sites ou l'email est utilise (equivalent du --print-found
+  # de Sherlock). --no-clear : pas de terminal a effacer en sous-processus.
+  command: ["holehe", "{target}", "--no-color", "--no-clear", "--only-used"]
+  target_type: email
+  output_mode: stdout
+  default_timeout_s: 120
+  # Bruteforce sur ~120 sites tiers (meme risque que sherlock/maigret) -- espace les runs
+  # consecutifs de holehe.
+  min_delay_s: 10
+  example: "test@example.com"
+
+- id: theharvester
+  category: domain
+  desc: "Recon domaine : sous-domaines/emails/IPs via sources passives publiques (crt.sh, sans cle API)"
+  # -b crtsh : la plupart des autres sources de theHarvester exigent une cle API (shodan,
+  # censys, hunter, securitytrails...) -- crt.sh (logs de transparence des certificats) est une
+  # des rares sources gratuites et sans cle, confirmee en testant reellement le CLI.
+  # -f report : theHarvester ecrit report.json/report.xml a l'endroit exact passe en argument
+  # (pas un sous-dossier fixe comme Maigret) -- relatif au cwd du run (voir runner.py).
+  command: ["theHarvester", "-d", "{target}", "-b", "crtsh", "-f", "report"]
+  target_type: domain
+  output_mode: json_file
+  output_path_template: "report.json"
+  default_timeout_s: 120
+  min_delay_s: 5
+  example: "python.org"
