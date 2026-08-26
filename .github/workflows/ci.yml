@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    # windows-latest : l'app cible Windows uniquement (PySide6 desktop + sous-processus
+    # Sherlock/Maigret/Holehe/theHarvester invoques via le PATH systeme, meme logique que
+    # scan_system) -- pas de pretention cross-platform, pas de matrice d'OS.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Compile check
+        run: python -m compileall osintbox osintbox_app.py -q
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
