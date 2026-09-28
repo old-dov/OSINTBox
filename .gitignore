@@ -18,3 +18,6 @@ build/
 dist/
 installer_output/
 *.spec
+
+# Rust build artifacts
+rust/target/

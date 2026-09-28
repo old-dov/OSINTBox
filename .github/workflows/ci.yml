@@ -28,3 +28,18 @@ jobs:
 
       - name: Run tests
         run: python -m pytest tests/ -v
+
+  rust-core:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: rust
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+      - name: Test Rust core
+        run: cargo test --workspace --offline
