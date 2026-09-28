@@ -15,14 +15,17 @@ before the Rust implementation takes over.
   fallback and category grouping.
 - Sequential queue with per-tool delays, rate-limit retries and backoff, status
   callbacks, deduplicated findings and cancellation between jobs.
+- Standalone `osintbox-rs` CLI for catalog tools, with confirmation, streamed job
+  statuses, per-tool JSON reports and consolidated JSON/CSV using the Python
+  report schema. The catalog is embedded; `--catalog` can override it.
 - Rust tests run locally and in the GitHub CI workflow.
 
 ## Next components
 
-1. Expose the Rust core through a CLI and compare complete scan reports with
-   the Python implementation before connecting the desktop interface.
-2. Connect a Rust executable to the existing desktop interface only after the
-   CLI behavior and packaged Windows build have been verified.
+1. Compare Rust and Python reports from representative real tool runs and
+   verify a packaged Windows CLI build.
+2. Connect the Rust executable to the existing desktop interface once the
+   packaged build has been verified. Dorking still uses the Python path.
 
 The external OSINT tools are separate executables. Porting the orchestrator
 does not replace those tools or remove their installation requirements.
@@ -34,4 +37,11 @@ cd rust
 cargo fmt --all --check
 cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo run -p osintbox-core --bin osintbox-rs -- --help
+cargo run -p osintbox-core --bin osintbox-rs -- alice --tool sherlock
 ```
+
+The CLI writes `results/` and `.osintbox_runs/` relative to its current
+directory by default. `--results-dir` selects another export directory.
+It launches the same external OSINT programs listed in the catalog; a
+confirmation prompt is required unless `--yes` is passed explicitly.

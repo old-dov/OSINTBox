@@ -9,6 +9,7 @@ pub mod catalog;
 pub mod normalizers;
 pub mod queue;
 pub mod runner;
+pub mod store;
 
 pub const TARGET_TYPES: &[&str] = &["username", "email", "domain", "host", "ip", "url"];
 
