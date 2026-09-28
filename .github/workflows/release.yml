@@ -40,13 +40,25 @@ jobs:
       # voir memoire "scan_system: signature de code differee" -- meme choix ici) qui
       # echouerait sans certificat sur le runner.
       - name: Build installer
+        id: build_installer
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}" -replace '^v', ''
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { $iscc = "C:\Program Files\Inno Setup 6\ISCC.exe" }
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler not found" }
           & $iscc /DMyAppVersion="$version" "installer.iss"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $versioned = "installer_output\OSINTBoxSetup-$version.exe"
+          $legacy = "installer_output\OSINTBoxSetup.exe"
+          if (Test-Path -LiteralPath $versioned) {
+            $installer = (Resolve-Path -LiteralPath $versioned).Path
+          } elseif (Test-Path -LiteralPath $legacy) {
+            $installer = (Resolve-Path -LiteralPath $legacy).Path
+          } else {
+            throw "OSINTBox installer not found after compilation"
+          }
+          "path=$installer" >> $env:GITHUB_OUTPUT
 
       - name: Create GitHub Release
         shell: pwsh
@@ -55,6 +67,6 @@ jobs:
         run: |
           gh release create "${{ github.ref_name }}" `
             "dist\OSINTBox.exe" `
-            "installer_output\OSINTBoxSetup.exe" `
+            "${{ steps.build_installer.outputs.path }}" `
             --title "OSINTBox ${{ github.ref_name }}" `
             --generate-notes
