@@ -55,6 +55,13 @@ Meme backend que la CLI
 executee dans un thread separe (`osintbox/ui/worker.py`) pour ne pas geler la fenetre pendant
 les delais entre outils / le backoff rate-limit.
 
+Dans l'installation Windows, les outils du catalogue passent par la CLI Rust
+`osintbox-rs.exe` placee a cote de `OSINTBox.exe`. Le worker garde les statuts et
+les resultats en direct, ainsi que l'arret entre deux outils. Le dorking reste
+sur le chemin Python. En lancement depuis les sources, le worker utilise la
+queue Python par defaut ; `OSINTBOX_RUST_CLI` peut pointer vers le binaire Rust
+pour tester cette integration.
+
 **Arret en cours de scan** : le bouton "Arreter" ne coupe pas un sous-processus deja lance (le
 runner fait un `communicate(timeout=...)` bloquant, pas de boucle de polling a interrompre a
 mi-course sans reecrire ce mecanisme deja valide) — il empeche seulement le *prochain* outil de
@@ -101,10 +108,11 @@ build_exe.bat
 ```
 
 Produit `dist\OSINTBox.exe` (PyInstaller, `--onefile --windowed`), meme convention que
-scan_system. Puis, avec [Inno Setup](https://jrsoftware.org/isinfo.php) installe :
+scan_system, et `dist\osintbox-rs.exe` (Rust, build release). Puis, avec
+[Inno Setup](https://jrsoftware.org/isinfo.php) installe :
 
 ```
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+"C:\Program Files\Inno Setup 7\ISCC.exe" /DMyAppVersion=1.0.3 installer.iss
 ```
 
 Produit `installer_output\OSINTBoxSetup.exe`.

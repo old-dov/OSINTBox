@@ -10,6 +10,7 @@ use osintbox_core::queue::{Job, JobStatus, QueueOptions, run_queue_live};
 use osintbox_core::runner::RunnerOptions;
 use osintbox_core::store::{USERNAME_MATCH_CAVEAT, save_consolidated_report, save_run};
 use osintbox_core::{validate_target, validate_territory};
+use serde_json::json;
 
 const CATALOG: &str = include_str!("../../../../osintbox/catalog.yaml");
 
@@ -20,10 +21,12 @@ struct Args {
     yes: bool,
     catalog: Option<PathBuf>,
     results_dir: PathBuf,
+    events_json: bool,
+    cancel_file: Option<PathBuf>,
 }
 
 fn usage() -> &'static str {
-    "Usage: osintbox-rs <cible> --tool <id> [--tool <id> ...] [--territory <code>] [--yes] [--catalog <fichier>] [--results-dir <dossier>]\nLes recherches dorking restent disponibles dans la CLI Python."
+    "Usage: osintbox-rs <cible> --tool <id> [--tool <id> ...] [--territory <code>] [--yes] [--catalog <fichier>] [--results-dir <dossier>] [--events-json] [--cancel-file <fichier>]\nLes recherches dorking restent disponibles dans la CLI Python."
 }
 
 fn parse_args(mut values: impl Iterator<Item = String>) -> Result<Option<Args>, String> {
@@ -33,10 +36,18 @@ fn parse_args(mut values: impl Iterator<Item = String>) -> Result<Option<Args>, 
     let mut yes = false;
     let mut catalog = None;
     let mut results_dir = PathBuf::from("results");
+    let mut events_json = false;
+    let mut cancel_file = None;
     while let Some(value) = values.next() {
         match value.as_str() {
             "-h" | "--help" => return Ok(None),
             "--yes" => yes = true,
+            "--events-json" => events_json = true,
+            "--cancel-file" => {
+                cancel_file = Some(PathBuf::from(
+                    values.next().ok_or("--cancel-file requiert un fichier")?,
+                ))
+            }
             "--tool" => tools.push(values.next().ok_or("--tool requiert un identifiant")?),
             "--territory" => territory = Some(values.next().ok_or("--territory requiert un code")?),
             "--catalog" => {
@@ -61,6 +72,8 @@ fn parse_args(mut values: impl Iterator<Item = String>) -> Result<Option<Args>, 
         yes,
         catalog,
         results_dir,
+        events_json,
+        cancel_file,
     }))
 }
 
@@ -135,8 +148,58 @@ fn report_job(
     findings: &mut Vec<Finding>,
     any_failure: &mut bool,
     write_error: &mut Option<String>,
+    events_json: bool,
 ) {
+    if events_json {
+        let result = job.result.as_ref();
+        let items = result
+            .map(|run| {
+                run.findings
+                    .iter()
+                    .map(|finding| {
+                        json!({
+                            "source": finding.source,
+                            "category": finding.category,
+                            "type": finding.kind,
+                            "value": finding.value,
+                            "confidence": finding.confidence,
+                            "raw": finding.raw,
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        println!(
+            "{}",
+            json!({
+                "tool_id": job.tool_id,
+                "status": job.status.as_str(),
+                "findings": items,
+                "stderr": result.map(|run| run.stderr.as_str()).unwrap_or(""),
+            })
+        );
+        let _ = io::stdout().flush();
+        if matches!(
+            job.status,
+            JobStatus::Queued | JobStatus::Running | JobStatus::Retrying
+        ) {
+            return;
+        }
+        if job.status != JobStatus::Done {
+            *any_failure = true;
+        }
+        if let Some(result) = result {
+            findings.extend(result.findings.iter().cloned());
+            if (job.status == JobStatus::Done || !result.findings.is_empty())
+                && let Err(error) = save_run(results_dir, result, SystemTime::now())
+            {
+                *write_error = Some(error.to_string());
+            }
+        }
+        return;
+    }
     println!("[{}] {}", job.tool_id, job.status.as_str());
+    let _ = io::stdout().flush();
     if matches!(
         job.status,
         JobStatus::Queued | JobStatus::Running | JobStatus::Retrying
@@ -227,15 +290,17 @@ fn run(args: Args) -> Result<i32, String> {
         .iter()
         .map(|spec| (spec.id.clone(), args.target.clone()))
         .collect::<Vec<_>>();
-    println!(
-        "[~] File d'attente : {} sur '{}'...",
-        specs
-            .iter()
-            .map(|spec| spec.id.as_str())
-            .collect::<Vec<_>>()
-            .join(", "),
-        args.target
-    );
+    if !args.events_json {
+        println!(
+            "[~] File d'attente : {} sur '{}'...",
+            specs
+                .iter()
+                .map(|spec| spec.id.as_str())
+                .collect::<Vec<_>>()
+                .join(", "),
+            args.target
+        );
+    }
     let runner_options = RunnerOptions::new(
         args.results_dir
             .parent()
@@ -257,15 +322,16 @@ fn run(args: Args) -> Result<i32, String> {
                 &mut findings,
                 &mut any_failure,
                 &mut write_error,
+                args.events_json,
             )
         },
-        || false,
+        || args.cancel_file.as_ref().is_some_and(|path| path.exists()),
     )
     .map_err(|error| format!("Execution interrompue: {error:?}"))?;
     if let Some(error) = write_error {
         return Err(format!("Impossible d'enregistrer un rapport: {error}"));
     }
-    if !findings.is_empty() {
+    if !findings.is_empty() && !args.events_json {
         println!("\n[=] Recapitulatif par categorie :");
         for (category, group) in group_by_category(&findings) {
             println!("  {category} ({}) :", group.len());

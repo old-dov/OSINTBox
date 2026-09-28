@@ -45,3 +45,8 @@ The CLI writes `results/` and `.osintbox_runs/` relative to its current
 directory by default. `--results-dir` selects another export directory.
 It launches the same external OSINT programs listed in the catalog; a
 confirmation prompt is required unless `--yes` is passed explicitly.
+The desktop worker uses the companion `osintbox-rs.exe` beside a packaged
+`OSINTBox.exe`, or `OSINTBOX_RUST_CLI` in a source checkout. It receives
+newline-delimited events with `--events-json` and requests cancellation
+between tools through `--cancel-file`. The Python queue remains available
+when the Rust executable is absent. `build_exe.bat` produces both binaries.

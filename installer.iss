@@ -41,6 +41,7 @@ Name: "desktopicon"; Description: "Creer un raccourci sur le bureau"; GroupDescr
 
 [Files]
 Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\osintbox-rs.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "osintbox.local.yaml.example"; DestDir: "{app}"; Flags: ignoreversion
 Source: "requirements-tools.txt"; DestDir: "{app}"; Flags: ignoreversion
 
