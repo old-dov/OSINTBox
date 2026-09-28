@@ -7,6 +7,7 @@ use std::net::IpAddr;
 
 pub mod catalog;
 pub mod normalizers;
+pub mod queue;
 pub mod runner;
 
 pub const TARGET_TYPES: &[&str] = &["username", "email", "domain", "host", "ip", "url"];

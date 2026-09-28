@@ -13,15 +13,15 @@ before the Rust implementation takes over.
   detection and preservation of findings produced before a rate-limit warning.
 - Normalization for Sherlock, Maigret, Holehe and theHarvester, plus the generic
   fallback and category grouping.
+- Sequential queue with per-tool delays, rate-limit retries and backoff, status
+  callbacks, deduplicated findings and cancellation between jobs.
 - Rust tests run locally and in the GitHub CI workflow.
 
 ## Next components
 
-1. Port the sequential queue, per-tool delays, backoff and cancellation between
-   jobs; compare the status transitions with the Python tests.
-2. Expose the Rust core through a CLI and compare complete scan reports with
+1. Expose the Rust core through a CLI and compare complete scan reports with
    the Python implementation before connecting the desktop interface.
-3. Connect a Rust executable to the existing desktop interface only after the
+2. Connect a Rust executable to the existing desktop interface only after the
    CLI behavior and packaged Windows build have been verified.
 
 The external OSINT tools are separate executables. Porting the orchestrator
