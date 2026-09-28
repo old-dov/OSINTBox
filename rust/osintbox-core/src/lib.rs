@@ -5,6 +5,8 @@
 
 use std::net::IpAddr;
 
+pub mod catalog;
+
 pub const TARGET_TYPES: &[&str] = &["username", "email", "domain", "host", "ip", "url"];
 
 const TERRITORY_TAGS: &[&str] = &[

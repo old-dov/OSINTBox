@@ -8,15 +8,14 @@ before the Rust implementation takes over.
 
 - `osintbox-core`: target and territory validation with the same return contract,
   accepted values and error messages as `osintbox/validators.py`.
-- Dependency-free Rust tests run locally and in the GitHub CI workflow.
+- Tool catalog loading and command construction from the existing YAML schema.
+- Rust tests run locally and in the GitHub CI workflow.
 
 ## Next components
 
-1. Port the tool catalog schema and command construction, keeping the catalog
-   data and the Python implementation as the reference during parity checks.
-2. Port subprocess execution and output normalization, then compare against
+1. Port subprocess execution and output normalization, then compare against
    recorded local fixtures from Sherlock, Maigret, Holehe and theHarvester.
-3. Connect a Rust executable to the existing desktop interface only after the
+2. Connect a Rust executable to the existing desktop interface only after the
    CLI behavior and packaged Windows build have been verified.
 
 The external OSINT tools are separate executables. Porting the orchestrator
@@ -27,5 +26,5 @@ Run the Rust checks with:
 ```text
 cd rust
 cargo fmt --all --check
-cargo test --workspace --offline
+cargo test --workspace --locked
 ```

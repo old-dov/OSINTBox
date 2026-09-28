@@ -42,4 +42,4 @@ jobs:
         run: cargo fmt --all --check
 
       - name: Test Rust core
-        run: cargo test --workspace --offline
+        run: cargo test --workspace --locked
