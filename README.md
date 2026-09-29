@@ -51,7 +51,8 @@ Fenetre unique : champ cible, cases a cocher par outil + dorking, bouton Lancer/
 compteur "temps ecoule (mm:ss) -- X/Y outils termines" mis a jour chaque seconde pendant le
 scan, statut des jobs en direct, tableau de resultats (triable par colonne), export JSON+CSV.
 L'interface suit automatiquement le theme clair/sombre du systeme, meme si celui-ci change
-pendant que l'application est ouverte. Le choix Francais/English est memorise entre les lancements.
+pendant que l'application est ouverte. L'installeur choisit aussi le theme du systeme au
+demarrage. Le choix Francais/English est memorise entre les lancements.
 Si un outil externe selectionne manque, l'interface le signale avant de lancer le scan et
 indique comment l'installer. L'installeur ne repete plus le rappel apres chaque mise a jour.
 Meme backend que la CLI
