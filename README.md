@@ -122,6 +122,10 @@ d'[Inno Setup](https://jrsoftware.org/isinfo.php) installee :
 Produit `installer_output\OSINTBoxSetup-1.0.4.exe` (ou le numero passe via
 `/DMyAppVersion`).
 
+La release GitHub fournit aussi `OSINTBox-portable-1.0.4.zip` avec les deux executables,
+`README.md` et `requirements-tools.txt`. Ce paquet fonctionne sans installation ; les donnees
+de scan restent dans `%LOCALAPPDATA%\OSINTBox`.
+
 **Important** : l'exe packagee n'embarque PAS Sherlock/Maigret/Holehe/theHarvester -- ce sont
 des outils tiers invoques en sous-processus. L'installeur copie `requirements-tools.txt`
 (dependances des 4 outils, **sans** PySide6 -- deja embarque dans l'exe fige, inutile ici et

@@ -32,6 +32,13 @@ jobs:
       - name: Build x64 executable
         run: .\build_exe.bat
 
+      - name: Package no-install version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          Compress-Archive -LiteralPath "dist\OSINTBox.exe", "dist\osintbox-rs.exe", "README.md", "requirements-tools.txt" `
+            -DestinationPath "dist\OSINTBox-portable-$version.zip" -Force
+
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
 
@@ -65,9 +72,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
           gh release create "${{ github.ref_name }}" `
-            "dist\OSINTBox.exe" `
-            "dist\osintbox-rs.exe" `
+            "dist\OSINTBox-portable-$version.zip" `
             "${{ steps.build_installer.outputs.path }}" `
             --title "OSINTBox ${{ github.ref_name }}" `
             --generate-notes
