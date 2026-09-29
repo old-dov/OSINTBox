@@ -7,10 +7,14 @@ from __future__ import annotations
 
 import time
 
-from PySide6.QtCore import QTimer, QUrl
-from PySide6.QtGui import QColor, QDesktopServices
+from PySide6.QtCore import QSettings, QTimer, QUrl
+from PySide6.QtGui import QColor, QDesktopServices, QIcon
+from pathlib import Path
+import sys
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
+    QFrame,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -38,7 +42,22 @@ from osintbox.consent import AUTHORIZATION_PROMPT
 from osintbox.normalizers import USERNAME_MATCH_CAVEAT, Finding
 from osintbox.store import save_consolidated_report
 from osintbox.ui.worker import ScanWorker
+from osintbox.ui.card_theme import GeometryMark
 from osintbox.validators import validate_target, validate_territory
+
+
+_ENGLISH = {
+    "RECON / ANALYSE": "RECON / ANALYSIS",
+    "Cible :": "Target:", "Territoire :": "Territory:",
+    "pseudo (sherlock/maigret/holehe) ou domaine (dorking)": "username (sherlock/maigret/holehe) or domain (dorking)",
+    "optionnel, ex: fr (maigret uniquement)": "optional, e.g. fr (maigret only)",
+    "dorking (domaine)": "dorking (domain)",
+    "Lancer": "Run", "Arreter": "Stop", "Exporter (JSON + CSV)": "Export (JSON + CSV)",
+    "Statut :": "Status:", "Resultats :": "Results:",
+    "Categorie": "Category", "Source": "Source", "Type": "Type", "Valeur": "Value", "Confiance": "Confidence",
+    "Double-cliquer pour ouvrir dans le navigateur": "Double-click to open in browser",
+    USERNAME_MATCH_CAVEAT: "A 'high' confidence username match (Sherlock/Maigret) means the username exists on that site, not that the account belongs to the target. Verify the photo, bio and activity before drawing a conclusion.",
+}
 
 
 class MainWindow(QMainWindow):
@@ -46,6 +65,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("OSINTBox")
         self.resize(900, 600)
+        self._settings = QSettings("OSINTBox", "OSINTBox")
+        self._language = str(self._settings.value("language", "fr"))
 
         self._worker: ScanWorker | None = None
         self._all_findings: list[Finding] = []
@@ -67,11 +88,38 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Catalogue invalide", str(exc))
 
         self._build_ui()
+        self._apply_language()
 
     def _build_ui(self) -> None:
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
+
+        header = QFrame()
+        header.setObjectName("brandHeader")
+        header_layout = QHBoxLayout(header)
+        icon_path = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2])) / "pictures" / "osint_box.ico"
+        if icon_path.exists():
+            logo = QLabel()
+            logo.setPixmap(QIcon(str(icon_path)).pixmap(56, 56))
+            header_layout.addWidget(logo)
+        heading = QVBoxLayout()
+        title = QLabel("OSINTBox")
+        title.setObjectName("brandTitle")
+        subtitle = QLabel("RECON / ANALYSE")
+        subtitle.setObjectName("brandSubtitle")
+        heading.addWidget(title)
+        heading.addWidget(subtitle)
+        header_layout.addLayout(heading)
+        header_layout.addStretch()
+        self.language_combo = QComboBox()
+        self.language_combo.addItem("Français", "fr")
+        self.language_combo.addItem("English", "en")
+        self.language_combo.setCurrentIndex(1 if self._language == "en" else 0)
+        self.language_combo.currentIndexChanged.connect(self._on_language_changed)
+        header_layout.addWidget(self.language_combo)
+        header_layout.addWidget(GeometryMark())
+        layout.addWidget(header)
 
         target_row = QHBoxLayout()
         target_row.addWidget(QLabel("Cible :"))
@@ -134,30 +182,54 @@ class MainWindow(QMainWindow):
         self.results_table.cellDoubleClicked.connect(self._on_result_cell_double_clicked)
         layout.addWidget(self.results_table)
 
+    def _on_language_changed(self) -> None:
+        self._language = self.language_combo.currentData()
+        self._settings.setValue("language", self._language)
+        self._apply_language()
+
+    def _say(self, french: str, english: str) -> str:
+        return english if self._language == "en" else french
+
+    def _apply_language(self) -> None:
+        reverse = {english: french for french, english in _ENGLISH.items()}
+        for widget in self.findChildren(QWidget):
+            if not isinstance(widget, (QLabel, QPushButton, QCheckBox)):
+                continue
+            source = reverse.get(widget.text(), widget.text())
+            widget.setText(_ENGLISH.get(source, source) if self._language == "en" else source)
+        for widget in self.findChildren(QLineEdit):
+            source = reverse.get(widget.placeholderText(), widget.placeholderText())
+            widget.setPlaceholderText(_ENGLISH.get(source, source) if self._language == "en" else source)
+        self.results_table.setHorizontalHeaderLabels([
+            _ENGLISH.get(label, label) if self._language == "en" else label
+            for label in ("Categorie", "Source", "Type", "Valeur", "Confiance")
+        ])
+        self._update_progress_label()
+
     # ── actions ──────────────────────────────────────────────────────────────
 
     def _on_run_clicked(self) -> None:
         target = self.target_input.text().strip()
         if not target:
-            QMessageBox.warning(self, "Cible manquante", "Entrez une cible avant de lancer.")
+            QMessageBox.warning(self, self._say("Cible manquante", "Missing target"), self._say("Entrez une cible avant de lancer.", "Enter a target before starting."))
             return
 
         selected_ids = [tool_id for tool_id, cb in self.tool_checkboxes.items() if cb.isChecked()]
         do_dork = self.dork_checkbox.isChecked()
         if not selected_ids and not do_dork:
-            QMessageBox.warning(self, "Rien a lancer", "Cochez au moins un outil ou le dorking.")
+            QMessageBox.warning(self, self._say("Rien a lancer", "Nothing selected"), self._say("Cochez au moins un outil ou le dorking.", "Select at least one tool or dorking."))
             return
 
         specs = [self._catalog[tool_id] for tool_id in selected_ids]
         for spec in specs:
             ok, error = validate_target(target, spec.target_type)
             if not ok:
-                QMessageBox.critical(self, "Cible invalide", f"{spec.id} ({spec.target_type}) : {error}")
+                QMessageBox.critical(self, self._say("Cible invalide", "Invalid target"), f"{spec.id} ({spec.target_type}) : {error}")
                 return
         if do_dork:
             ok, error = validate_target(target, "domain")
             if not ok:
-                QMessageBox.critical(self, "Cible invalide pour le dorking", error)
+                QMessageBox.critical(self, self._say("Cible invalide pour le dorking", "Invalid dorking target"), error)
                 return
 
         territory = self.territory_input.text().strip()
@@ -165,7 +237,7 @@ class MainWindow(QMainWindow):
         if territory:
             ok, error = validate_territory(territory)
             if not ok:
-                QMessageBox.critical(self, "Territoire invalide", error)
+                QMessageBox.critical(self, self._say("Territoire invalide", "Invalid territory"), error)
                 return
             unsupported_territory_tools = [spec.id for spec in specs if not spec.territory_flag]
             specs = [spec.with_territory(territory) for spec in specs]
@@ -182,7 +254,7 @@ class MainWindow(QMainWindow):
         self.username_caveat_label.setVisible(False)
         self.status_list.clear()
         for tool_id in unsupported_territory_tools:
-            self.status_list.addItem(QListWidgetItem(f"[~] {tool_id} ne supporte pas le territoire, ignore pour cet outil."))
+            self.status_list.addItem(QListWidgetItem(self._say(f"[~] {tool_id} ne supporte pas le territoire, ignore pour cet outil.", f"[~] {tool_id} does not support territory; ignored for this tool.")))
         self.run_button.setEnabled(False)
         self.stop_button.setEnabled(True)
         self.export_button.setEnabled(False)
@@ -202,9 +274,12 @@ class MainWindow(QMainWindow):
         self._worker.start()
 
     def _confirm_authorization(self, target: str) -> bool:
-        text = AUTHORIZATION_PROMPT.format(target=target) + "\nConfirmez-vous etre autorise a scanner cette cible ?"
+        text = self._say(
+            AUTHORIZATION_PROMPT.format(target=target) + "\nConfirmez-vous etre autorise a scanner cette cible ?",
+            f"OSINTBox will search for: {target}\nUse it only with authorization and respect other people's privacy.\nDo you confirm you are authorized to scan this target?",
+        )
         answer = QMessageBox.question(
-            self, "Autorisation requise", text,
+            self, self._say("Autorisation requise", "Authorization required"), text,
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
         )
         return answer == QMessageBox.Yes
@@ -214,14 +289,14 @@ class MainWindow(QMainWindow):
             self._worker.requestInterruption()
         self._stop_requested = True
         self.stop_button.setEnabled(False)
-        self.status_list.addItem(QListWidgetItem("-- arret demande (apres le job en cours) --"))
+        self.status_list.addItem(QListWidgetItem(self._say("-- arret demande (apres le job en cours) --", "-- stop requested (after current job) --")))
         self.status_list.scrollToBottom()
 
     def _on_export_clicked(self) -> None:
         if not self._all_findings:
             return
         json_path, csv_path = save_consolidated_report(self._current_target, self._all_findings)
-        QMessageBox.information(self, "Export termine", f"JSON : {json_path}\nCSV : {csv_path}")
+        QMessageBox.information(self, self._say("Export termine", "Export complete"), f"JSON : {json_path}\nCSV : {csv_path}")
 
     # ── signaux du ScanWorker ────────────────────────────────────────────────
 
@@ -239,7 +314,7 @@ class MainWindow(QMainWindow):
             self.username_caveat_label.setVisible(True)
 
     def _on_job_error(self, tool_id: str, message: str) -> None:
-        self.status_list.addItem(QListWidgetItem(f"[ERREUR] {tool_id} : {message}"))
+        self.status_list.addItem(QListWidgetItem(f"[{self._say('ERREUR', 'ERROR')}] {tool_id} : {message}"))
         self.status_list.scrollToBottom()
 
     def _on_dorking_status(self, message: str) -> None:
@@ -257,7 +332,10 @@ class MainWindow(QMainWindow):
     def _update_progress_label(self) -> None:
         elapsed = 0.0 if self._scan_start_time is None else time.monotonic() - self._scan_start_time
         minutes, seconds = divmod(int(elapsed), 60)
-        self.progress_label.setText(f"Temps ecoule : {minutes:02d}:{seconds:02d} -- {self._done_units} / {self._total_units} outil(s) termine(s)")
+        if self._language == "en":
+            self.progress_label.setText(f"Elapsed: {minutes:02d}:{seconds:02d} -- {self._done_units} / {self._total_units} tool(s) completed")
+        else:
+            self.progress_label.setText(f"Temps ecoule : {minutes:02d}:{seconds:02d} -- {self._done_units} / {self._total_units} outil(s) termine(s)")
 
     def _on_finished_all(self, all_findings: list[Finding], any_failure: bool) -> None:
         self._elapsed_timer.stop()
@@ -266,9 +344,9 @@ class MainWindow(QMainWindow):
         self.stop_button.setEnabled(False)
         self.export_button.setEnabled(bool(self._all_findings))
         if self._stop_requested:
-            self.status_list.addItem(QListWidgetItem(f"-- arrete : {len(self._all_findings)} resultat(s) avant arret --"))
+            self.status_list.addItem(QListWidgetItem(self._say(f"-- arrete : {len(self._all_findings)} resultat(s) avant arret --", f"-- stopped: {len(self._all_findings)} result(s) before stop --")))
         else:
-            self.status_list.addItem(QListWidgetItem(f"-- termine : {len(self._all_findings)} resultat(s) --"))
+            self.status_list.addItem(QListWidgetItem(self._say(f"-- termine : {len(self._all_findings)} resultat(s) --", f"-- finished: {len(self._all_findings)} result(s) --")))
         self.status_list.scrollToBottom()
 
     def _append_result_rows(self, findings: list[Finding]) -> None:
@@ -289,7 +367,7 @@ class MainWindow(QMainWindow):
                     font = item.font()
                     font.setUnderline(True)
                     item.setFont(font)
-                    item.setToolTip("Double-cliquer pour ouvrir dans le navigateur")
+                    item.setToolTip(self._say("Double-cliquer pour ouvrir dans le navigateur", "Double-click to open in browser"))
                 self.results_table.setItem(row, col, item)
         self.results_table.setSortingEnabled(True)
 

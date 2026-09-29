@@ -20,9 +20,30 @@ def test_window_builds_and_loads_catalog_checkboxes(qapp):
     assert "0 / 0" in window.progress_label.text()
 
 
+def test_language_switch_updates_visible_labels_and_persists(qapp):
+    from PySide6.QtCore import QSettings
+
+    settings = QSettings("OSINTBox", "OSINTBox")
+    previous = settings.value("language", "fr")
+    try:
+        window = MainWindow()
+        window.language_combo.setCurrentIndex(0)
+        window.language_combo.setCurrentIndex(1)
+        assert window.run_button.text() == "Run"
+        assert window.results_table.horizontalHeaderItem(0).text() == "Category"
+        assert QSettings("OSINTBox", "OSINTBox").value("language") == "en"
+        reopened_window = MainWindow()
+        assert reopened_window.run_button.text() == "Run"
+        window.language_combo.setCurrentIndex(0)
+        assert window.run_button.text() == "Lancer"
+        assert window.results_table.horizontalHeaderItem(0).text() == "Categorie"
+    finally:
+        settings.setValue("language", previous)
+
+
 def _units_done(text: str) -> str:
-    # Extrait juste "X / Y outil(s)..." du label, sans dependre du minutage exact (temps reel).
-    return text.split("-- ", 1)[1]
+    # Ignore le minutage et le libelle traduit, qui depend de la preference utilisateur.
+    return " ".join(text.split("-- ", 1)[1].split()[:3])
 
 
 def test_progress_counter_advances_once_per_terminal_status(qapp):
@@ -31,15 +52,15 @@ def test_progress_counter_advances_once_per_terminal_status(qapp):
     window._update_progress_label()
     window._on_job_status_changed("sherlock", "queued")
     window._on_job_status_changed("sherlock", "running")
-    assert _units_done(window.progress_label.text()) == "0 / 2 outil(s) termine(s)"
+    assert _units_done(window.progress_label.text()) == "0 / 2"
     window._on_job_status_changed("maigret", "retrying")  # tentative en cours, pas final
-    assert _units_done(window.progress_label.text()) == "0 / 2 outil(s) termine(s)"
+    assert _units_done(window.progress_label.text()) == "0 / 2"
     window._on_job_status_changed("sherlock", "done")
-    assert _units_done(window.progress_label.text()) == "1 / 2 outil(s) termine(s)"
+    assert _units_done(window.progress_label.text()) == "1 / 2"
     window._on_job_status_changed("maigret", "rate_limited")  # statut final, compte desormais
-    assert _units_done(window.progress_label.text()) == "2 / 2 outil(s) termine(s)"
+    assert _units_done(window.progress_label.text()) == "2 / 2"
     window._on_job_status_changed("maigret", "rate_limited")  # deja compte, pas de double-compte
-    assert _units_done(window.progress_label.text()) == "2 / 2 outil(s) termine(s)"
+    assert _units_done(window.progress_label.text()) == "2 / 2"
 
 
 def test_elapsed_timer_starts_on_run_and_stops_on_finish(qapp, monkeypatch):

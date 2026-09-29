@@ -3,13 +3,16 @@
 
 #define MyAppName "OSINTBox"
 #ifndef MyAppVersion
-	#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.3"
 #endif
 #ifndef MyOutputSuffix
 	#define MyOutputSuffix ""
 #endif
 #define MyAppPublisher "OSINTBox"
 #define MyAppExeName "OSINTBox.exe"
+#ifndef MyDistDir
+  #define MyDistDir "dist"
+#endif
 #define MyAppId "8B1C6D2E-4F0A-4C9B-9E3D-7A5F2B6C8D14"
 
 [Setup]
@@ -21,7 +24,7 @@ DefaultDirName={autopf}\OSINTBox
 DefaultGroupName=OSINTBox
 DisableProgramGroupPage=yes
 OutputDir=installer_output
-OutputBaseFilename=OSINTBoxSetup{#MyOutputSuffix}
+OutputBaseFilename=OSINTBoxSetup-{#MyAppVersion}{#MyOutputSuffix}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -40,8 +43,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "Creer un raccourci sur le bureau"; GroupDescription: "Raccourcis:"; Flags: unchecked
 
 [Files]
-Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\osintbox-rs.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyDistDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyDistDir}\osintbox-rs.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "osintbox.local.yaml.example"; DestDir: "{app}"; Flags: ignoreversion
 Source: "requirements-tools.txt"; DestDir: "{app}"; Flags: ignoreversion
 

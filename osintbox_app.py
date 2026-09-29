@@ -7,11 +7,13 @@ Usage:
 """
 
 import sys
+import ctypes
 from pathlib import Path
 
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
+from osintbox.ui.card_theme import APP_STYLESHEET
 from osintbox.ui.main_window import MainWindow
 
 
@@ -26,9 +28,12 @@ ICON_PATH = resource_path("pictures/osint_box.ico")
 
 
 def main() -> int:
+    if sys.platform == "win32":
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("JeanDovy.OSINTBox")
     app = QApplication(sys.argv)
     app.setApplicationName("OSINTBox")
     app.setOrganizationName("OSINTBox")
+    app.setStyleSheet(APP_STYLESHEET)
     if ICON_PATH.exists():
         app.setWindowIcon(QIcon(str(ICON_PATH)))
 

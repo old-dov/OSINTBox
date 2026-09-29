@@ -50,6 +50,7 @@ python osintbox_app.py
 Fenetre unique : champ cible, cases a cocher par outil + dorking, bouton Lancer/Arreter,
 compteur "temps ecoule (mm:ss) -- X/Y outils termines" mis a jour chaque seconde pendant le
 scan, statut des jobs en direct, tableau de resultats (triable par colonne), export JSON+CSV.
+L'interface propose un theme clair et un choix Francais/English memorise entre les lancements.
 Meme backend que la CLI
 (catalog/queue/normalizers/store) — aucune logique dupliquee, juste une couche UI par-dessus,
 executee dans un thread separe (`osintbox/ui/worker.py`) pour ne pas geler la fenetre pendant
@@ -108,14 +109,15 @@ build_exe.bat
 ```
 
 Produit `dist\OSINTBox.exe` (PyInstaller, `--onefile --windowed`), meme convention que
-scan_system, et `dist\osintbox-rs.exe` (Rust, build release). Puis, avec
-[Inno Setup](https://jrsoftware.org/isinfo.php) installe :
+scan_system, et `dist\osintbox-rs.exe` (Rust, build release). Puis, avec une version stable
+d'[Inno Setup](https://jrsoftware.org/isinfo.php) installee (7.1.0 pour le paquet 1.0.3) :
 
 ```
 "C:\Program Files\Inno Setup 7\ISCC.exe" /DMyAppVersion=1.0.3 installer.iss
 ```
 
-Produit `installer_output\OSINTBoxSetup.exe`.
+Produit `installer_output\OSINTBoxSetup-1.0.3.exe` (ou le numero passe via
+`/DMyAppVersion`).
 
 **Important** : l'exe packagee n'embarque PAS Sherlock/Maigret/Holehe/theHarvester -- ce sont
 des outils tiers invoques en sous-processus. L'installeur copie `requirements-tools.txt`
