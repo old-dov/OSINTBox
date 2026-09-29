@@ -118,7 +118,7 @@ installation, placez ces deux executables dans le meme dossier. Puis, avec une v
 d'[Inno Setup](https://jrsoftware.org/isinfo.php) installee :
 
 ```
-"C:\Program Files\Inno Setup 7\ISCC.exe" /DMyAppVersion=1.0.5 installer.iss
+"C:\Program Files\Inno Setup 6\ISCC.exe" /DMyAppVersion=1.0.5 installer.iss
 ```
 
 Produit `installer_output\OSINTBoxSetup-1.0.5.exe` (ou le numero passe via
