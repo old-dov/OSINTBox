@@ -13,7 +13,7 @@ from pathlib import Path
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
-from osintbox.ui.card_theme import APP_STYLESHEET
+from osintbox.ui.card_theme import install_system_theme
 from osintbox.ui.main_window import MainWindow
 
 
@@ -33,7 +33,7 @@ def main() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName("OSINTBox")
     app.setOrganizationName("OSINTBox")
-    app.setStyleSheet(APP_STYLESHEET)
+    install_system_theme(app)
     if ICON_PATH.exists():
         app.setWindowIcon(QIcon(str(ICON_PATH)))
 

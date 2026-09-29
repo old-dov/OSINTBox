@@ -50,7 +50,8 @@ python osintbox_app.py
 Fenetre unique : champ cible, cases a cocher par outil + dorking, bouton Lancer/Arreter,
 compteur "temps ecoule (mm:ss) -- X/Y outils termines" mis a jour chaque seconde pendant le
 scan, statut des jobs en direct, tableau de resultats (triable par colonne), export JSON+CSV.
-L'interface propose un theme clair et un choix Francais/English memorise entre les lancements.
+L'interface suit automatiquement le theme clair/sombre du systeme, meme si celui-ci change
+pendant que l'application est ouverte. Le choix Francais/English est memorise entre les lancements.
 Si un outil externe selectionne manque, l'interface le signale avant de lancer le scan et
 indique comment l'installer. L'installeur ne repete plus le rappel apres chaque mise a jour.
 Meme backend que la CLI
@@ -116,13 +117,13 @@ installation, placez ces deux executables dans le meme dossier. Puis, avec une v
 d'[Inno Setup](https://jrsoftware.org/isinfo.php) installee :
 
 ```
-"C:\Program Files\Inno Setup 7\ISCC.exe" /DMyAppVersion=1.0.4 installer.iss
+"C:\Program Files\Inno Setup 7\ISCC.exe" /DMyAppVersion=1.0.5 installer.iss
 ```
 
-Produit `installer_output\OSINTBoxSetup-1.0.4.exe` (ou le numero passe via
+Produit `installer_output\OSINTBoxSetup-1.0.5.exe` (ou le numero passe via
 `/DMyAppVersion`).
 
-La release GitHub fournit aussi `OSINTBox-portable-1.0.4.zip` avec les deux executables,
+La release GitHub fournit aussi `OSINTBox-portable-1.0.5.zip` avec les deux executables,
 `README.md` et `requirements-tools.txt`. Ce paquet fonctionne sans installation ; les donnees
 de scan restent dans `%LOCALAPPDATA%\OSINTBox`.
 
