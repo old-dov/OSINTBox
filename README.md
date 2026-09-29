@@ -109,7 +109,8 @@ build_exe.bat
 ```
 
 Produit `dist\OSINTBox.exe` (PyInstaller, `--onefile --windowed`), meme convention que
-scan_system, et `dist\osintbox-rs.exe` (Rust, build release). Puis, avec une version stable
+scan_system, et `dist\osintbox-rs.exe` (Rust, build release). Pour utiliser la version sans
+installation, placez ces deux executables dans le meme dossier. Puis, avec une version stable
 d'[Inno Setup](https://jrsoftware.org/isinfo.php) installee (7.1.0 pour le paquet 1.0.3) :
 
 ```
