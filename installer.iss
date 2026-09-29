@@ -3,7 +3,7 @@
 
 #define MyAppName "OSINTBox"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.3"
+#define MyAppVersion "1.0.4"
 #endif
 #ifndef MyOutputSuffix
 	#define MyOutputSuffix ""
@@ -59,22 +59,6 @@ Type: filesandordirs; Name: "{app}"
 Filename: "{app}\{#MyAppExeName}"; Description: "Lancer OSINTBox"; Flags: nowait postinstall skipifsilent
 
 [Code]
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssPostInstall then
-  begin
-    MsgBox('OSINTBox orchestre 4 outils externes (Sherlock, Maigret, Holehe, theHarvester) via ' +
-      'sous-processus -- ils ne sont PAS inclus dans cet installeur.' + #13#10 + #13#10 +
-      'Pour les installer (ne PAS creer le venv dans ce dossier -- Program Files n''est pas ' +
-      'ecrivable sans elevation) : ouvrez un terminal, "cd %LOCALAPPDATA%\OSINTBox", ' +
-      '"python -m venv tools", "tools\Scripts\activate", puis depuis ' + ExpandConstant('{app}') +
-      ' : "pip install -r requirements-tools.txt". Ajoutez ensuite ' +
-      '%LOCALAPPDATA%\OSINTBox\tools\Scripts au PATH systeme, ou lancez toujours OSINTBox ' +
-      'depuis un terminal ou ce venv est active.',
-      mbInformation, MB_OK);
-  end;
-end;
-
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if (CurUninstallStep = usPostUninstall) and (not UninstallSilent) then

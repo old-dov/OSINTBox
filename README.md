@@ -51,6 +51,8 @@ Fenetre unique : champ cible, cases a cocher par outil + dorking, bouton Lancer/
 compteur "temps ecoule (mm:ss) -- X/Y outils termines" mis a jour chaque seconde pendant le
 scan, statut des jobs en direct, tableau de resultats (triable par colonne), export JSON+CSV.
 L'interface propose un theme clair et un choix Francais/English memorise entre les lancements.
+Si un outil externe selectionne manque, l'interface le signale avant de lancer le scan et
+indique comment l'installer. L'installeur ne repete plus le rappel apres chaque mise a jour.
 Meme backend que la CLI
 (catalog/queue/normalizers/store) — aucune logique dupliquee, juste une couche UI par-dessus,
 executee dans un thread separe (`osintbox/ui/worker.py`) pour ne pas geler la fenetre pendant
@@ -111,13 +113,13 @@ build_exe.bat
 Produit `dist\OSINTBox.exe` (PyInstaller, `--onefile --windowed`), meme convention que
 scan_system, et `dist\osintbox-rs.exe` (Rust, build release). Pour utiliser la version sans
 installation, placez ces deux executables dans le meme dossier. Puis, avec une version stable
-d'[Inno Setup](https://jrsoftware.org/isinfo.php) installee (7.1.0 pour le paquet 1.0.3) :
+d'[Inno Setup](https://jrsoftware.org/isinfo.php) installee :
 
 ```
-"C:\Program Files\Inno Setup 7\ISCC.exe" /DMyAppVersion=1.0.3 installer.iss
+"C:\Program Files\Inno Setup 7\ISCC.exe" /DMyAppVersion=1.0.4 installer.iss
 ```
 
-Produit `installer_output\OSINTBoxSetup-1.0.3.exe` (ou le numero passe via
+Produit `installer_output\OSINTBoxSetup-1.0.4.exe` (ou le numero passe via
 `/DMyAppVersion`).
 
 **Important** : l'exe packagee n'embarque PAS Sherlock/Maigret/Holehe/theHarvester -- ce sont
@@ -134,10 +136,9 @@ tools\Scripts\activate
 pip install -r "C:\Program Files\OSINTBox\requirements-tools.txt"
 ```
 
-Ajoutez ensuite `%LOCALAPPDATA%\OSINTBox\tools\Scripts` au PATH systeme, ou lancez toujours
-OSINTBox depuis un terminal ou ce venv est active -- sinon `resolve_executable()` ne trouve
-pas les outils (voir `osintbox/catalog.py`). L'installeur affiche ce rappel apres
-l'installation.
+Ajoutez ensuite `%LOCALAPPDATA%\OSINTBox\tools\Scripts` au PATH utilisateur et relancez
+OSINTBox, ou lancez-le depuis un terminal ou ce venv est active. Cette configuration n'est
+a faire qu'une fois par machine et reste valable lors des mises a jour.
 
 Les donnees utilisateur (resultats, cle API `osintbox.local.yaml`, runs bruts) vont dans
 `%LOCALAPPDATA%\OSINTBox\` pour la version installee (Program Files n'est pas ecrivable sans

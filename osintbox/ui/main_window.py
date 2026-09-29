@@ -5,6 +5,7 @@ pour un outil OSINT local). Reutilise le backend CLI tel quel (catalog/queue/nor
 
 from __future__ import annotations
 
+import shutil
 import time
 
 from PySide6.QtCore import QSettings, QTimer, QUrl
@@ -41,7 +42,7 @@ from osintbox.catalog import CatalogError, ToolSpec, load_catalog
 from osintbox.consent import AUTHORIZATION_PROMPT
 from osintbox.normalizers import USERNAME_MATCH_CAVEAT, Finding
 from osintbox.store import save_consolidated_report
-from osintbox.ui.worker import ScanWorker
+from osintbox.ui.worker import ScanWorker, rust_cli_path
 from osintbox.ui.card_theme import GeometryMark
 from osintbox.validators import validate_target, validate_territory
 
@@ -208,6 +209,16 @@ class MainWindow(QMainWindow):
 
     # ── actions ──────────────────────────────────────────────────────────────
 
+    def _missing_executables(self, specs: list[ToolSpec]) -> list[str]:
+        # Le compagnon Rust ne cherche que sur PATH. La queue Python sait aussi trouver
+        # les outils dans le venv de l'interpreteur courant.
+        use_rust = rust_cli_path() is not None
+        return [
+            spec.command[0]
+            for spec in specs
+            if not (shutil.which(spec.command[0]) if use_rust else spec.resolve_executable())
+        ]
+
     def _on_run_clicked(self) -> None:
         target = self.target_input.text().strip()
         if not target:
@@ -241,6 +252,25 @@ class MainWindow(QMainWindow):
                 return
             unsupported_territory_tools = [spec.id for spec in specs if not spec.territory_flag]
             specs = [spec.with_territory(territory) for spec in specs]
+
+        missing = self._missing_executables(specs)
+        if missing:
+            names = ", ".join(dict.fromkeys(missing))
+            QMessageBox.warning(
+                self,
+                self._say("Outils manquants", "Missing tools"),
+                self._say(
+                    f"Introuvable sur le PATH : {names}.\n\n"
+                    "Installez ces outils une seule fois avec requirements-tools.txt "
+                    "(dans le dossier d'installation d'OSINTBox), ajoutez leur dossier "
+                    "Scripts au PATH, puis relancez OSINTBox.",
+                    f"Not found on PATH: {names}.\n\n"
+                    "Install these tools once using requirements-tools.txt "
+                    "(in the OSINTBox installation folder), add their Scripts folder "
+                    "to PATH, then restart OSINTBox.",
+                ),
+            )
+            return
 
         if not self._confirm_authorization(target):
             return

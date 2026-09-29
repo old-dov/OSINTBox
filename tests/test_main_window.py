@@ -1,12 +1,13 @@
 import time
+from pathlib import Path
+
+import pytest
 
 from osintbox.normalizers import Finding
 from osintbox.ui.main_window import MainWindow
 
-# Note : pas de test sur _on_run_clicked ici -- il ouvre des QMessageBox modales (warning/
-# question) qui bloqueraient indefiniment en pytest sans utilisateur pour cliquer. La logique
-# qu'il orchestre (validate_target, ScanWorker) est deja couverte par test_validators.py et
-# test_worker.py ; ce test se limite a la construction de la fenetre elle-meme.
+# Les tests qui appellent _on_run_clicked remplacent les QMessageBox modales pour ne pas
+# bloquer pytest. validate_target et ScanWorker sont couverts separement.
 
 
 def test_window_builds_and_loads_catalog_checkboxes(qapp):
@@ -39,6 +40,33 @@ def test_language_switch_updates_visible_labels_and_persists(qapp):
         assert window.results_table.horizontalHeaderItem(0).text() == "Categorie"
     finally:
         settings.setValue("language", previous)
+
+
+def test_missing_tool_is_reported_before_authorization_or_scan(qapp, monkeypatch):
+    window = MainWindow()
+    window.target_input.setText("alice")
+    window.tool_checkboxes["sherlock"].setChecked(True)
+    monkeypatch.setattr("osintbox.ui.main_window.rust_cli_path", lambda: Path("osintbox-rs.exe"))
+    monkeypatch.setattr("osintbox.ui.main_window.shutil.which", lambda _name: None)
+    monkeypatch.setattr(window, "_confirm_authorization", lambda _target: pytest.fail("Authorization should not be requested"))
+    warnings = []
+    monkeypatch.setattr("osintbox.ui.main_window.QMessageBox.warning", lambda _parent, title, message: warnings.append((title, message)))
+
+    window._on_run_clicked()
+
+    assert len(warnings) == 1
+    assert "sherlock" in warnings[0][1]
+    assert "requirements-tools.txt" in warnings[0][1]
+    assert window._worker is None
+
+
+def test_python_worker_accepts_tools_in_its_venv(qapp, monkeypatch):
+    window = MainWindow()
+    monkeypatch.setattr("osintbox.ui.main_window.rust_cli_path", lambda: None)
+    monkeypatch.setattr("osintbox.ui.main_window.shutil.which", lambda _name: None)
+    monkeypatch.setattr("osintbox.ui.main_window.ToolSpec.resolve_executable", lambda _spec: "venv-tool.exe")
+
+    assert window._missing_executables([window._catalog["sherlock"]]) == []
 
 
 def _units_done(text: str) -> str:
